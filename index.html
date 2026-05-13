@@ -3,170 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Visualizador 360° - Imagem Local</title>
+    <title>Visualizador 360° Rápido</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #0a0a0a;
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-        }
-        #viewer-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            outline: none;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        #viewer-container { width: 100%; height: 100%; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+        
         /* Botões flutuantes */
-        .controls-panel {
+        .controls {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 60px;
-            padding: 8px 20px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 50px;
+            padding: 8px 16px;
             display: flex;
-            gap: 18px;
-            z-index: 1100;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            gap: 12px;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        .ctrl-btn {
+        button {
             background: #1e2a3a;
             border: none;
             color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 8px 22px;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 1px solid rgba(255,255,255,0.2);
-            font-family: inherit;
-        }
-        .ctrl-btn:hover {
-            background: #2c4c6e;
-            transform: scale(1.02);
-        }
-        .vr-btn {
-            background: #ff5722;
-            box-shadow: 0 0 8px rgba(255,87,34,0.6);
-        }
-        .vr-btn:hover {
-            background: #ff784e;
-        }
-        /* Overlay de carregamento com barra de progresso */
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #111, #000);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            gap: 20px;
-            transition: opacity 0.5s;
-        }
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid #2c3e44;
-            border-top: 5px solid #ff5722;
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .progress-container {
-            width: 280px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 30px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            width: 0%;
-            height: 12px;
-            background: #ff5722;
-            transition: width 0.2s ease;
-        }
-        .percentage-text {
-            color: white;
-            font-size: 1.8rem;
+            font-size: 14px;
             font-weight: bold;
-            font-family: monospace;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 20px;
+            padding: 8px 18px;
             border-radius: 40px;
-        }
-        .instruction {
-            position: fixed;
-            top: 18px;
-            right: 18px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #ccc;
-            z-index: 1000;
-            pointer-events: none;
-        }
-        /* Menu de seleção de arquivo (caso a imagem padrão falhe) */
-        .file-menu {
-            position: fixed;
-            bottom: 100px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            padding: 8px 15px;
-            border-radius: 40px;
-            z-index: 1100;
-            font-size: 13px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .file-menu label {
-            color: white;
             cursor: pointer;
-            background: #2c4c6e;
-            padding: 5px 12px;
-            border-radius: 30px;
             transition: 0.2s;
         }
-        .file-menu label:hover {
-            background: #3a6ea5;
+        button:hover { background: #2c4c6e; transform: scale(1.02); }
+        .vr-btn { background: #ff5722; }
+        .vr-btn:hover { background: #ff784e; }
+        
+        /* Loading simples */
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 12px 24px;
+            border-radius: 40px;
+            color: white;
+            font-family: monospace;
+            font-size: 18px;
+            z-index: 200;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
         }
-        .file-menu span {
-            color: #ddd;
-            font-size: 12px;
+        
+        .instrucao {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #ccc;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 100;
         }
+        
         @media (max-width: 640px) {
-            .ctrl-btn { padding: 5px 14px; font-size: 0.8rem; }
-            .controls-panel { gap: 8px; padding: 5px 12px; bottom: 12px; }
-            .file-menu { bottom: 80px; left: 10px; padding: 5px 10px; }
-            .file-menu label { padding: 3px 10px; font-size: 11px; }
+            button { padding: 5px 12px; font-size: 12px; }
+            .controls { gap: 8px; padding: 6px 12px; }
+            #loading { font-size: 14px; white-space: nowrap; padding: 8px 18px; }
         }
     </style>
     
-    <!-- Importação da biblioteca Photo Sphere Viewer -->
     <script type="importmap">
         {
             "imports": {
@@ -179,111 +91,32 @@
 </head>
 <body>
     <div id="viewer-container"></div>
-    
-    <!-- Overlay de loading com progresso -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-        <div class="percentage-text" id="percentage-display">0%</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar-fill"></div>
-        </div>
-        <div style="color:#aaa;">Carregando imagem 360°</div>
+    <div id="loading">🌀 Carregando panorama...</div>
+    <div class="controls" id="controls" style="display: none;">
+        <button id="fullscreen">⛶ Tela Cheia</button>
+        <button id="vr" class="vr-btn">🥽 VR</button>
     </div>
-    
-    <!-- Botões principais -->
-    <div class="controls-panel" id="controls-panel" style="display: none;">
-        <button id="fullscreen-btn" class="ctrl-btn">⛶ Tela Cheia</button>
-        <button id="vr-btn" class="ctrl-btn vr-btn">🥽 Modo VR</button>
-    </div>
-    
-    <!-- Menu para selecionar imagem local (fallback ou troca manual) -->
-    <div class="file-menu">
-        <span>📁</span>
-        <label for="upload-image">Escolher imagem</label>
-        <input type="file" id="upload-image" accept="image/jpeg,image/png,image/jpg,image/webp" style="display: none;">
-        <span id="file-name" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">pano.jpg</span>
-    </div>
-    
-    <div class="instruction">🖱️ Arraste para olhar | 🥽 VR | 📁 Envie sua própria imagem</div>
+    <div class="instrucao">🖱️ Arraste para olhar | 🥽 VR</div>
 
     <script type="module">
         import { Viewer } from 'photo-sphere-viewer';
         import { VirtualRealityPlugin } from 'photo-sphere-viewer/dist/plugins/virtual-reality.module.js';
 
-        // Nome da imagem padrão (coloque seu arquivo na raiz com este nome)
-        const DEFAULT_IMAGE = "pano.jpg";   // <--- ALTERE PARA O NOME DA SUA IMAGEM LOCAL
-        let currentViewer = null;
-        let vrPlugin = null;
+        // Imagem pública rápida e garantida (Panorama da Terra - 2048x1024)
+        const IMAGEM_URL = "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg";
         
+        let viewer = null;
         const container = document.getElementById('viewer-container');
-        const loadingDiv = document.getElementById('loading-overlay');
-        const controlsPanel = document.getElementById('controls-panel');
-        const percentageSpan = document.getElementById('percentage-display');
-        const progressFill = document.getElementById('progress-bar-fill');
-        const fileInput = document.getElementById('upload-image');
-        const fileNameSpan = document.getElementById('file-name');
+        const loadingDiv = document.getElementById('loading');
+        const controlsDiv = document.getElementById('controls');
         
-        // Atualiza a barra de progresso
-        function updateProgress(percent) {
-            const p = Math.min(100, Math.max(0, Math.floor(percent)));
-            percentageSpan.innerText = `${p}%`;
-            progressFill.style.width = `${p}%`;
-        }
-        
-        function showControls() {
-            if (controlsPanel) controlsPanel.style.display = 'flex';
-        }
-        
-        function hideLoading() {
-            if (loadingDiv) {
-                loadingDiv.style.opacity = '0';
-                setTimeout(() => loadingDiv.style.display = 'none', 500);
-            }
-        }
-        
-        // Carrega uma imagem via XHR com progresso, retorna ObjectURL
-        function loadImageWithProgress(url) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.responseType = 'blob';
-                
-                xhr.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        const percent = (event.loaded / event.total) * 100;
-                        updateProgress(percent);
-                    } else {
-                        updateProgress(70); // fallback indeterminado
-                    }
-                };
-                
-                xhr.onload = () => {
-                    if (xhr.status === 200) {
-                        const blob = xhr.response;
-                        const objectURL = URL.createObjectURL(blob);
-                        resolve(objectURL);
-                    } else {
-                        reject(new Error(`HTTP ${xhr.status}`));
-                    }
-                };
-                
-                xhr.onerror = () => reject(new Error('Erro de rede ou CORS (imagem local não deve ter CORS)'));
-                xhr.send();
-            });
-        }
-        
-        // Inicializa o visualizador com uma URL (blob ou direta)
-        async function initViewerWithUrl(imageUrl, isBlob = false) {
+        async function iniciar() {
             try {
-                if (currentViewer) {
-                    await currentViewer.destroy();
-                    currentViewer = null;
-                }
-                
-                currentViewer = new Viewer({
+                loadingDiv.style.display = 'flex';
+                viewer = new Viewer({
                     container: container,
-                    panorama: imageUrl,
-                    caption: '📷 Panorama 360°',
+                    panorama: IMAGEM_URL,
+                    caption: '🌍 Panorama 360°',
                     navbar: false,
                     defaultZoomLvl: 0,
                     mousewheel: true,
@@ -291,139 +124,47 @@
                     touchmove: true,
                     autorotate: false,
                     keyboard: true,
-                    renderer: { antialias: true, powerPreference: "high-performance" },
-                    textureOptions: { crossOrigin: isBlob ? undefined : 'Anonymous' },
-                    plugins: [[VirtualRealityPlugin, { defaultZoom: 0, rotateSpeed: 1.0 }]]
+                    renderer: { antialias: true },
+                    plugins: [[VirtualRealityPlugin, { defaultZoom: 0 }]]
                 });
                 
-                await currentViewer.ready();
-                hideLoading();
-                showControls();
+                await viewer.ready();
+                loadingDiv.style.display = 'none';
+                controlsDiv.style.display = 'flex';
                 
                 // Plugin VR
-                vrPlugin = currentViewer.getPlugin(VirtualRealityPlugin);
-                const vrButton = document.getElementById('vr-btn');
-                if (vrButton && vrPlugin) {
-                    const newVr = vrButton.cloneNode(true);
-                    vrButton.parentNode?.replaceChild(newVr, vrButton);
-                    newVr.addEventListener('click', () => {
-                        if (vrPlugin.isEnabled()) vrPlugin.exit();
-                        else vrPlugin.enter();
-                    });
-                    vrPlugin.addEventListener('enter-vr', () => {
-                        newVr.innerHTML = '🕶️ Sair VR';
-                        newVr.style.background = '#ff9800';
-                    });
-                    vrPlugin.addEventListener('exit-vr', () => {
-                        newVr.innerHTML = '🥽 Modo VR';
-                        newVr.style.background = '#ff5722';
-                    });
-                }
+                const vrPlugin = viewer.getPlugin(VirtualRealityPlugin);
+                const vrBtn = document.getElementById('vr');
+                vrBtn.onclick = () => {
+                    if (vrPlugin.isEnabled()) vrPlugin.exit();
+                    else vrPlugin.enter();
+                };
+                vrPlugin.addEventListener('enter-vr', () => vrBtn.innerHTML = '🕶️ Sair VR');
+                vrPlugin.addEventListener('exit-vr', () => vrBtn.innerHTML = '🥽 VR');
                 
                 // Tela cheia
-                const fsBtn = document.getElementById('fullscreen-btn');
-                if (fsBtn) {
-                    const newFs = fsBtn.cloneNode(true);
-                    fsBtn.parentNode?.replaceChild(newFs, fsBtn);
-                    newFs.addEventListener('click', () => {
-                        if (!document.fullscreenElement) {
-                            container.requestFullscreen().catch(e => console.warn(e));
-                        } else {
-                            document.exitFullscreen();
-                        }
-                    });
-                    document.addEventListener('fullscreenchange', () => {
-                        newFs.innerHTML = document.fullscreenElement ? '✕ Sair Tela Cheia' : '⛶ Tela Cheia';
-                    });
-                }
+                const fsBtn = document.getElementById('fullscreen');
+                fsBtn.onclick = () => {
+                    if (!document.fullscreenElement) container.requestFullscreen();
+                    else document.exitFullscreen();
+                };
+                document.addEventListener('fullscreenchange', () => {
+                    fsBtn.innerHTML = document.fullscreenElement ? '✕ Sair' : '⛶ Tela Cheia';
+                });
                 
-                window.addEventListener('resize', () => currentViewer?.resize());
-                
+                window.addEventListener('resize', () => viewer?.resize());
             } catch (err) {
-                console.error("Erro ao iniciar visualizador:", err);
-                throw err;
+                loadingDiv.innerHTML = '❌ Erro ao carregar imagem. Recarregue a página.';
+                console.error(err);
             }
         }
         
-        // Carrega imagem a partir de um arquivo local (File)
-        async function loadFromFile(file) {
-            if (!file) return;
-            fileNameSpan.innerText = file.name;
-            updateProgress(0);
-            loadingDiv.style.display = 'flex';
-            loadingDiv.style.opacity = '1';
-            if (controlsPanel) controlsPanel.style.display = 'none';
-            
-            try {
-                // Criar URL de blob diretamente sem XHR (já está no computador)
-                const objectURL = URL.createObjectURL(file);
-                // Para simular progresso, como o blob é instantâneo, setamos 100%
-                updateProgress(100);
-                await initViewerWithUrl(objectURL, true);
-                // Não revogamos a URL imediatamente, mas depois de um tempo ou quando trocar
-                // Armazenamos para limpeza futura
-                if (window._currentBlobUrl && window._currentBlobUrl !== objectURL) {
-                    URL.revokeObjectURL(window._currentBlobUrl);
-                }
-                window._currentBlobUrl = objectURL;
-            } catch (err) {
-                alert("Erro ao carregar imagem: " + err.message);
-                loadingDiv.style.display = 'none';
-            }
-        }
+        iniciar();
         
-        // Tenta carregar a imagem padrão (pano.jpg) via XHR com progresso
-        async function loadDefaultImage() {
-            updateProgress(0);
-            loadingDiv.style.display = 'flex';
-            loadingDiv.style.opacity = '1';
-            if (controlsPanel) controlsPanel.style.display = 'none';
-            
-            try {
-                // Primeiro tenta carregar via XHR para mostrar progresso real
-                const blobUrl = await loadImageWithProgress(DEFAULT_IMAGE);
-                await initViewerWithUrl(blobUrl, true);
-                if (window._currentBlobUrl && window._currentBlobUrl !== blobUrl) {
-                    URL.revokeObjectURL(window._currentBlobUrl);
-                }
-                window._currentBlobUrl = blobUrl;
-                fileNameSpan.innerText = DEFAULT_IMAGE;
-            } catch (err) {
-                console.warn("Imagem padrão não encontrada ou erro:", err);
-                // Fallback: tenta carregar diretamente (sem XHR, pode ser bloqueado por CORS se for rede, mas em local funciona)
-                try {
-                    updateProgress(50);
-                    await initViewerWithUrl(DEFAULT_IMAGE);
-                    fileNameSpan.innerText = DEFAULT_IMAGE;
-                } catch (err2) {
-                    // Se falhar, exibe mensagem amigável e aguarda upload do usuário
-                    loadingDiv.style.display = 'none';
-                    alert(`Imagem padrão "${DEFAULT_IMAGE}" não encontrada.\nPor favor, selecione uma imagem 360° usando o botão "Escolher imagem".\n\nDica: Certifique-se de que o arquivo ${DEFAULT_IMAGE} está na mesma pasta que este HTML.`);
-                    // Mostra o painel de controle mesmo sem imagem? Melhor não, aguarda upload
-                    if (controlsPanel) controlsPanel.style.display = 'none';
-                    // Destaca o menu de upload
-                    fileNameSpan.style.color = "#ffaa66";
-                }
-            }
-        }
-        
-        // Evento de upload do usuário
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                loadFromFile(e.target.files[0]);
-            }
-        });
-        
-        // Inicia com a imagem padrão
-        loadDefaultImage();
-        
-        // Impedir scroll ao arrastar no canvas
+        // Evita scroll em dispositivos móveis durante arrasto
         document.body.addEventListener('touchmove', (e) => {
             if (e.target?.nodeName === 'CANVAS') e.preventDefault();
         }, { passive: false });
-        
-        // Dica: se quiser trocar a imagem padrão, altere a constante DEFAULT_IMAGE no início do script
-        console.log(`Visualizador 360° - Imagem local esperada: ${DEFAULT_IMAGE}`);
     </script>
 </body>
 </html>
