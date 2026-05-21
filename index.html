@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Visualizador 360° Rápido</title>
+    <title>Visualizador 360° - pano.jpeg</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -35,6 +35,7 @@
             border-radius: 40px;
             cursor: pointer;
             transition: 0.2s;
+            font-family: inherit;
         }
         button:hover { background: #2c4c6e; transform: scale(1.02); }
         .vr-btn { background: #ff5722; }
@@ -72,6 +73,29 @@
             z-index: 100;
         }
         
+        /* Mensagem de erro amigável */
+        .error-msg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px 30px;
+            border-radius: 20px;
+            color: #ff8888;
+            text-align: center;
+            z-index: 300;
+            border: 1px solid #ff5555;
+            backdrop-filter: blur(8px);
+            font-family: monospace;
+        }
+        .error-msg button {
+            margin-top: 15px;
+            background: #ff5722;
+            padding: 6px 20px;
+            font-size: 14px;
+        }
+        
         @media (max-width: 640px) {
             button { padding: 5px 12px; font-size: 12px; }
             .controls { gap: 8px; padding: 6px 12px; }
@@ -91,32 +115,55 @@
 </head>
 <body>
     <div id="viewer-container"></div>
-    <div id="loading">🌀 Carregando panorama...</div>
+    <div id="loading">🌀 Carregando pano.jpeg...</div>
     <div class="controls" id="controls" style="display: none;">
         <button id="fullscreen">⛶ Tela Cheia</button>
         <button id="vr" class="vr-btn">🥽 VR</button>
     </div>
-    <div class="instrucao">🖱️ Arraste para olhar | 🥽 VR</div>
+    <div class="instrucao">🖱️ Arraste para olhar | 🥽 VR | Imagem: pano.jpeg</div>
 
     <script type="module">
         import { Viewer } from 'photo-sphere-viewer';
         import { VirtualRealityPlugin } from 'photo-sphere-viewer/dist/plugins/virtual-reality.module.js';
 
-        // Imagem pública rápida e garantida (Panorama da Terra - 2048x1024)
-        const IMAGEM_URL = "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg";
+        // Nome da imagem local na mesma pasta do index.html
+        const IMAGEM_LOCAL = "pano.jpeg";
         
         let viewer = null;
         const container = document.getElementById('viewer-container');
         const loadingDiv = document.getElementById('loading');
         const controlsDiv = document.getElementById('controls');
         
+        // Função para testar se a imagem existe (opcional, só para feedback)
+        async function verificarImagem(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+        }
+        
         async function iniciar() {
+            loadingDiv.style.display = 'flex';
+            
+            // Verifica rapidamente se a imagem está acessível
+            const existe = await verificarImagem(IMAGEM_LOCAL);
+            if (!existe) {
+                loadingDiv.innerHTML = `❌ Arquivo "${IMAGEM_LOCAL}" não encontrado.<br><small>Coloque a imagem na mesma pasta do index.html</small>`;
+                const errorBox = document.createElement('div');
+                errorBox.className = 'error-msg';
+                errorBox.innerHTML = `<strong>Erro:</strong> Imagem pano.jpeg não encontrada!<br><br>Certifique-se de que o arquivo <strong>pano.jpeg</strong> está na mesma pasta que este HTML.<br><button onclick="location.reload()">Tentar novamente</button>`;
+                document.body.appendChild(errorBox);
+                loadingDiv.style.display = 'none';
+                return;
+            }
+            
             try {
-                loadingDiv.style.display = 'flex';
                 viewer = new Viewer({
                     container: container,
-                    panorama: IMAGEM_URL,
-                    caption: '🌍 Panorama 360°',
+                    panorama: IMAGEM_LOCAL,
+                    caption: '📷 Panorama 360°',
                     navbar: false,
                     defaultZoomLvl: 0,
                     mousewheel: true,
@@ -124,8 +171,9 @@
                     touchmove: true,
                     autorotate: false,
                     keyboard: true,
-                    renderer: { antialias: true },
-                    plugins: [[VirtualRealityPlugin, { defaultZoom: 0 }]]
+                    renderer: { antialias: true, powerPreference: "high-performance" },
+                    textureOptions: { crossOrigin: 'Anonymous' }, // necessário para algumas configurações
+                    plugins: [[VirtualRealityPlugin, { defaultZoom: 0, rotateSpeed: 1.0 }]]
                 });
                 
                 await viewer.ready();
@@ -153,9 +201,14 @@
                 });
                 
                 window.addEventListener('resize', () => viewer?.resize());
+                
             } catch (err) {
-                loadingDiv.innerHTML = '❌ Erro ao carregar imagem. Recarregue a página.';
                 console.error(err);
+                loadingDiv.innerHTML = '❌ Erro ao carregar a imagem. Verifique se é uma imagem panorâmica 360° (formato 2:1).';
+                const errorBox = document.createElement('div');
+                errorBox.className = 'error-msg';
+                errorBox.innerHTML = `<strong>Falha no carregamento:</strong><br>${err.message || 'Erro desconhecido'}<br><br>Certifique-se de que o arquivo pano.jpeg é uma imagem válida e tem proporção 2:1 (ex: 4096x2048).<br><button onclick="location.reload()">Recarregar</button>`;
+                document.body.appendChild(errorBox);
             }
         }
         
